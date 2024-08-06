@@ -52,6 +52,11 @@
 using namespace toy;
 namespace cl = llvm::cl;
 
+
+
+int dumpLLVMIR(mlir::ModuleOp module) ;
+int runJit(mlir::ModuleOp module);
+
 static cl::opt<std::string> inputFilename(cl::Positional,
                                           cl::desc("<input toy file>"),
                                           cl::init("-"),
@@ -137,7 +142,6 @@ int loadMLIR(llvm::SourceMgr &sourceMgr, mlir::MLIRContext &context,
   return 0;
 }
 
-int dumpLLVMIR(mlir::ModuleOp module) ;
 
 int dumpMLIR()
 {
@@ -204,7 +208,8 @@ mlir::DialectRegistry registry;
 
   //module->dump();
   dumpLLVMIR(*module);
-  return 0;
+  runJit(*module);
+   return 0;
   
 }
 
@@ -221,6 +226,7 @@ int dumpAST()
     return 1;
 
   dump(*moduleAST);
+ 
   return 0;
 }
 
