@@ -88,7 +88,7 @@ mlir/MLIRGen.cpp
 mlir/Dialect.cpp
 mlir/ToyCombine.cpp
 mlir/LowerToAffineLoops.cpp
-#mlir/LowerToLLVM.cpp
+mlir/LowerToLLVM.cpp
 mlir/ShapeInferencePass.cpp
 DEPENDS
 ToyCh3OpsIncGen

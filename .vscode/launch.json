@@ -8,8 +8,9 @@
         "program": "${command:cmake.launchTargetPath}",
         //"args": ["/Users/fabricelainard/Code17/mlir-toy/ast.toy", "-emit=mlir", "-mlir-print-debuginfo"],
         
-         "args": ["/Users/fabricelainard/Code17/mlir-toy/affine-lowering.mlir", "-emit=mlir", "-mlir-print-debuginfo"],
-      
+        // "args": ["/Users/fabricelainard/Code17/mlir-toy/affine-lowering.mlir", "-emit=mlir", "-mlir-print-debuginfo"],
+         "args": ["/Users/fabricelainard/Code17/mlir-toy/ast.toy", "-emit=mlir", "-mlir-print-debuginfo"],
+     
         "cwd": "${command:cmake.launchTargetDirectory}"
       } 
     ] 
