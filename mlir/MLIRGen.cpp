@@ -104,7 +104,7 @@ private:
 
   /// Declare a variable in the current scope, return success if the variable
   /// wasn't declared yet.
-   mlir::LogicalResult declare(llvm::StringRef var, mlir::Value value) {
+  mlir::LogicalResult declare(llvm::StringRef var, mlir::Value value) {
     if (symbolTable.count(var))
       return mlir::failure();
     symbolTable.insert(var, value);
@@ -173,6 +173,10 @@ private:
       function.setType(builder.getFunctionType(
           function.getFunctionType().getInputs(), getType(VarType{})));
     }
+
+    // If this function isn't main, then set the visibility to private.
+    if (funcAST.getProto()->getName() != "main")
+      function.setPrivate();
 
     return function;
   }
@@ -336,7 +340,7 @@ private:
 
   /// Emit a print expression. It emits specific operations for two builtins:
   /// transpose(x) and print(x).
-   mlir::LogicalResult mlirGen(PrintExprAST &call) {
+  mlir::LogicalResult mlirGen(PrintExprAST &call) {
     auto arg = mlirGen(*call.getArg());
     if (!arg)
       return mlir::failure();
