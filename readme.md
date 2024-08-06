@@ -22,4 +22,5 @@ hope this helps...
 #Chapter 5 : Partial Lowering to Lower-Level Dialects for Optimization,
 is in branch ch5
 
-    
+#Chapter 6 : Lowering to LLVM and CodeGeneration
+is in branch ch6 
