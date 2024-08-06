@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Launch",
+        "program": "${command:cmake.launchTargetPath}",
+        "args": ["/Users/fabricelainard/Code17/mlir-toy/toyc.cpp", "-emit=mlir", "-mlir-print-debuginfo"],
+        "cwd": "${command:cmake.launchTargetDirectory}"
+      } 
+    ] 
+  }
+  
