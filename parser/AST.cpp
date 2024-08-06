@@ -43,6 +43,7 @@ private:
   void dump(ExprAST *expr);
   void dump(ExprASTList *exprList);
   void dump(NumberExprAST *num);
+   void dump(NumberIntExprAST *num);
   void dump(LiteralExprAST *node);
   void dump(VariableExprAST *node);
   void dump(ReturnExprAST *node);
@@ -81,7 +82,7 @@ static std::string loc(T *node) {
 /// Dispatch to a generic expressions to the appropriate subclass using RTTI
 void ASTDumper::dump(ExprAST *expr) {
   llvm::TypeSwitch<ExprAST *>(expr)
-      .Case<BinaryExprAST, CallExprAST, LiteralExprAST, NumberExprAST,
+      .Case<BinaryExprAST, CallExprAST, LiteralExprAST, NumberExprAST,NumberIntExprAST,
             PrintExprAST, DawnAddAST,ReturnExprAST, VarDeclExprAST, VariableExprAST>(
           [&](auto *node) { this->dump(node); })
       .Default([&](ExprAST *) {
@@ -116,6 +117,13 @@ void ASTDumper::dump(NumberExprAST *num) {
   INDENT();
   llvm::errs() << num->getValue() << " " << loc(num) << "\n";
 }
+
+
+void ASTDumper::dump(NumberIntExprAST *num) {
+  INDENT();
+  llvm::errs() << num->getValue() << " " << loc(num) << "\n";
+}
+ 
 
 /// Helper to print recursively a literal. This handles nested array like:
 ///    [ [ 1, 2 ], [ 3, 4 ] ]

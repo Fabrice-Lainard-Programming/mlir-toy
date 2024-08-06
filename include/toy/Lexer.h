@@ -47,6 +47,7 @@ enum Token : int {
   // primary
   tok_identifier = -5,
   tok_number = -6,
+  tok_integer = -7,
 };
 
 /// The Lexer is an abstract base class providing all the facilities that the
@@ -89,6 +90,11 @@ public:
     return numVal;
   }
 
+
+ double getIntValue() {
+    assert(curTok == tok_integer);
+    return numVal;
+  }
   /// Return the location for the beginning of the current token.
   Location getLastLocation() { return lastLocation; }
 
@@ -155,9 +161,16 @@ private:
         numStr += lastChar;
         lastChar = Token(getNextChar());
       } while (isdigit(lastChar) || lastChar == '.');
-
-      numVal = strtod(numStr.c_str(), nullptr);
+if(numStr.find('.') != std::string::npos)
+      { 
+        numVal = strtod(numStr.c_str(), nullptr);
       return tok_number;
+      }
+      else
+      { 
+        numVal = strtod(numStr.c_str(), nullptr);
+      return tok_integer;
+      }
     }
 
     if (lastChar == '#') {

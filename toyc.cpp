@@ -206,7 +206,7 @@ mlir::DialectRegistry registry;
   if (mlir::failed(pm.run(*module)))
     return 4;
 
-  //module->dump();
+  module->dump();
   dumpLLVMIR(*module);
   runJit(*module);
    return 0;

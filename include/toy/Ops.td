@@ -39,6 +39,34 @@ class Toy_Op<string mnemonic, list<Trait> traits = []> :
 // Toy Operations
 //===----------------------------------------------------------------------===//
 
+def ConstantIntOp : Toy_Op<"constantInt", [Pure]> {
+  let summary = "constant double-precision floating-point value";
+  let description = [{
+    This operation represents a constant double-precision floating-point value.
+  }];
+
+  // Specify the operation attributes and results.
+  let arguments = (ins F64Attr:$value);
+  let results = (outs F64:$result);
+
+  // Custom builder for the operation.
+ 
+ 
+    
+ let builders = [
+    OpBuilder<(ins "double":$value), [{
+      auto valueAttr = FloatAttr::get($_builder.getF64Type(), value);
+      build($_builder, $_state, valueAttr.getType(), valueAttr);
+    }]>
+  ];
+    
+  // Specify how to print the operation.
+  let assemblyFormat = [{
+    attr-dict `:` type($result)
+  }];
+}
+ 
+
 //===----------------------------------------------------------------------===//
 // ConstantOp
 //===----------------------------------------------------------------------===//
@@ -279,8 +307,8 @@ def DawnAddOp : Toy_Op<"downadd", [Pure]> {
   let description = [{
     This operation represents an addition of two operands.
   }];
-  let arguments = (ins F32:$lhs, F32:$rhs);
-  let results = (outs F32:$result);
+  let arguments = (ins F64:$lhs, F64:$rhs);
+  let results = (outs F64:$result);
 
   // Custom builder for the operation.
   let builders = [
@@ -393,5 +421,26 @@ def TransposeOp : Toy_Op<"transpose",
   // Indicate that additional verification for this operation is necessary.
   let hasVerifier = 1;
 }
+
+
+
+
+// Define the 'PrintDoubleOp' operation.
+def PrintDoubleOp : Toy_Op<"print_double"> {
+  let summary = "print double-precision floating-point value";
+  let description = [{
+    This operation prints a double-precision floating-point value to the standard output.
+  }];
+
+  // Specify the operation arguments.
+  let arguments = (ins F64:$input);
+
+ 
+  // Specify how to print the operation.
+  let assemblyFormat = [{
+    $input attr-dict `:` type($input)
+  }];
+}
+
 
 #endif // TOY_OPS

@@ -38,6 +38,7 @@ public:
     Expr_VarDecl,
     Expr_Return,
     Expr_Num,
+     Expr_Integer,
     Expr_Literal,
     Expr_Var,
     Expr_BinOp,
@@ -75,6 +76,21 @@ public:
   /// LLVM style RTTI
   static bool classof(const ExprAST *c) { return c->getKind() == Expr_Num; }
 };
+
+
+class NumberIntExprAST : public ExprAST {
+  double val;
+
+public:
+  NumberIntExprAST(Location loc, double val)
+      : ExprAST(Expr_Integer, std::move(loc)), val(val) {}
+
+  double getValue() { return val; }
+
+  /// LLVM style RTTI
+  static bool classof(const ExprAST *c) { return c->getKind() == Expr_Integer; }
+};
+
 
 /// Expression class for a literal value.
 class LiteralExprAST : public ExprAST {

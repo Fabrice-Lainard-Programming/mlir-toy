@@ -85,6 +85,15 @@ private:
     return std::move(result);
   }
 
+ std::unique_ptr<ExprAST> parseIntegerExpr() {
+    auto loc = lexer.getLastLocation();
+    auto result =
+        std::make_unique<NumberIntExprAST>(std::move(loc), lexer.getIntValue());
+    lexer.consume(tok_integer);
+    return std::move(result);
+  }
+  
+
   /// Parse a literal array expression.
   /// tensorLiteral ::= [ literalList ] | number
   /// literalList ::= tensorLiteral | tensorLiteral, literalList
@@ -235,6 +244,8 @@ private:
       return parseIdentifierExpr();
     case tok_number:
       return parseNumberExpr();
+         case tok_integer:
+      return parseIntegerExpr();
     case '(':
       return parseParenExpr();
     case '[':
@@ -310,6 +321,8 @@ private:
       if (lexer.getCurToken() == ',')
         lexer.getNextToken();
     }
+
+    
 
     if (lexer.getCurToken() != '>')
       return parseError<VarType>(">", "to end type");

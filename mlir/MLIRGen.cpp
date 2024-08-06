@@ -395,6 +395,14 @@ namespace
       return builder.create<ConstantOp>(loc(num.loc()), num.getValue());
     }
 
+    mlir::Value mlirGen(NumberIntExprAST &num)
+    {
+     // auto doubleAttr = builder.getF64FloatAttr(num.getValue());
+      return builder.create<ConstantIntOp>(loc(num.loc()),num.getValue() );
+    }
+
+    
+
     /// Dispatch codegen for the right expression subclass using RTTI.
     mlir::Value mlirGen(ExprAST &expr)
     {
@@ -411,6 +419,8 @@ namespace
         return mlirGen(cast<CallExprAST>(expr));
       case toy::ExprAST::Expr_Num:
         return mlirGen(cast<NumberExprAST>(expr));
+         case toy::ExprAST::Expr_Integer:
+        return mlirGen(cast<NumberIntExprAST>(expr));
       default:
         emitError(loc(expr.loc()))
             << "MLIR codegen encountered an unhandled expr kind '"
