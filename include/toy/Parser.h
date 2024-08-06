@@ -207,6 +207,15 @@ private:
       return std::make_unique<PrintExprAST>(std::move(loc), std::move(args[0]));
     }
 
+     if (name == "dawnadd") {
+      if (args.size() != 2)
+        return parseError<ExprAST>("<single arg>", "as argument to dawnadd()");
+
+      return std::make_unique<DawnAddAST>(std::move(loc), std::move(args[0]),std::move(args[1]));
+    }
+
+    
+
     // Call to a user-defined function
     return std::make_unique<CallExprAST>(std::move(loc), name, std::move(args));
   }

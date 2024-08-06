@@ -97,7 +97,7 @@ ToyCh5ShapeInferenceInterfaceIncGen
 )
     
     llvm_update_compile_flags(toyc)
-    target_link_libraries(toyc PRIVATE ${LIBS})
+   target_link_libraries(toyc PRIVATE ${LIBS})
     
     mlir_check_all_link_libraries(toyc)
  

@@ -272,6 +272,31 @@ def PrintOp : Toy_Op<"print"> {
   let assemblyFormat = "$input attr-dict `:` type($input)";
 }
 
+
+
+def DawnAddOp : Toy_Op<"downadd", [Pure]> {
+  let summary = "addition operation";
+  let description = [{
+    This operation represents an addition of two operands.
+  }];
+  let arguments = (ins F32:$lhs, F32:$rhs);
+  let results = (outs F32:$result);
+
+  // Custom builder for the operation.
+  let builders = [
+    OpBuilder<(ins "Value":$lhs, "Value":$rhs), [{
+      // Use the same type for the result as the operands
+      auto resultType = lhs.getType();
+      return build($_builder, $_state, resultType, lhs, rhs);
+    }]>
+  ];
+
+  // Specify how to print the operation.
+  let assemblyFormat = [{
+    $lhs `,` $rhs attr-dict `:` type($lhs)
+  }];
+}
+
 //===----------------------------------------------------------------------===//
 // ReshapeOp
 //===----------------------------------------------------------------------===//

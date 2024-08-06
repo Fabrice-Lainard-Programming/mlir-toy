@@ -176,6 +176,38 @@ private:
 };
 } // namespace
 
+
+
+
+namespace {
+class DawnAddOpLowering : public ConversionPattern {
+public:
+  explicit DawnAddOpLowering(MLIRContext *context)
+      : ConversionPattern(toy::DawnAddOp::getOperationName(), 1, context) {}
+
+  LogicalResult matchAndRewrite(Operation *op, ArrayRef<Value> operands,
+                                ConversionPatternRewriter &rewriter) const override {
+    auto addOp = cast<toy::DawnAddOp>(op);
+    auto loc = addOp.getLoc();
+
+    // Assuming the operands are of LLVM float type (LLVM::LLVMType::getFloatTy)
+    auto operandType = operands[0].getType();
+    auto resultType = operandType;
+
+    // Create the LLVM add instruction
+    auto llvmAdd = rewriter.create<LLVM::FAddOp>(loc, resultType, operands[0], operands[1]);
+
+    // Replace the custom AddOp with the LLVM add instruction
+    rewriter.replaceOp(op, llvmAdd.getResult());
+
+    return success();
+  }
+};
+} // end anonymous namespace
+
+ 
+
+
 //===----------------------------------------------------------------------===//
 // ToyToLLVMLoweringPass
 //===----------------------------------------------------------------------===//
@@ -225,6 +257,7 @@ void ToyToLLVMLoweringPass::runOnOperation() {
   // The only remaining operation to lower from the `toy` dialect, is the
   // PrintOp.
   patterns.add<PrintOpLowering>(&getContext());
+  patterns.add<DawnAddOpLowering>(&getContext());
 
   // We want to completely lower to LLVM, so we use a `FullConversion`. This
   // ensures that only legal operations will remain after the conversion.

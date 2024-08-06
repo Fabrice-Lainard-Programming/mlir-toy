@@ -273,6 +273,26 @@ struct PrintOpLowering : public OpConversionPattern<toy::PrintOp> {
   }
 };
 
+
+//===----------------------------------------------------------------------===//
+// ToyToAffine RewritePatterns: DawnAddOp operations
+//===----------------------------------------------------------------------===//
+
+struct DawnAddOpLowering : public OpConversionPattern<toy::DawnAddOp> {
+  using OpConversionPattern<toy::DawnAddOp>::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(toy::DawnAddOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const final {
+    // We don't lower "toy.print" in this pass, but we need to update its
+    // operands.
+    rewriter.modifyOpInPlace(op,
+                             [&] { op->setOperands(adaptor.getOperands()); });
+    return success();
+  }
+};
+
+
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Return operations
 //===----------------------------------------------------------------------===//
@@ -369,12 +389,18 @@ void ToyToAffineLoweringPass::runOnOperation() {
     return llvm::none_of(op->getOperandTypes(),
                          [](Type type) { return llvm::isa<TensorType>(type); });
   });
+target.addDynamicallyLegalOp<toy::DawnAddOp>([](toy::DawnAddOp op) {
+    return llvm::none_of(op->getOperandTypes(),
+                         [](Type type) { return llvm::isa<TensorType>(type); });
+  });
+
+  
 
   // Now that the conversion target has been defined, we just need to provide
   // the set of patterns that will lower the Toy operations.
   RewritePatternSet patterns(&getContext());
   patterns.add<AddOpLowering, ConstantOpLowering, FuncOpLowering, MulOpLowering,
-               PrintOpLowering, ReturnOpLowering, TransposeOpLowering>(
+               PrintOpLowering, DawnAddOpLowering,ReturnOpLowering, TransposeOpLowering>(
       &getContext());
 
   // With the target and rewrite patterns defined, we can now attempt the
