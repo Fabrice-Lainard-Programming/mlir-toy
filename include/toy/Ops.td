@@ -18,7 +18,7 @@ include "mlir/IR/SymbolInterfaces.td"
 include "mlir/Interfaces/CallInterfaces.td"
 include "mlir/Interfaces/CastInterfaces.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
-include "toy/ShapeInferenceInterface.td"
+
 
 // Provide a definition of the 'toy' dialect in the ODS framework so that we
 // can define our operations.
@@ -42,99 +42,82 @@ class Toy_Op<string mnemonic, list<Trait> traits = []> :
 //===----------------------------------------------------------------------===//
 // ConstantOp
 //===----------------------------------------------------------------------===//
+ 
 
-// We define a toy operation by inheriting from our base 'Toy_Op' class above.
-// Here we provide the mnemonic and a list of traits for the operation. The
-// constant operation is marked as 'Pure' as it is a pure operation
-// and may be removed if dead.
-def ConstantOp : Toy_Op<"constant", [Pure]> {
-  // Provide a summary and description for this operation. This can be used to
-  // auto-generate documentation of the operations within our dialect.
-  let summary = "constant";
+ def ConstantOp : Toy_Op<"constant", [Pure]> {
+  let summary = "constant double operation";
   let description = [{
-    Constant operation turns a literal into an SSA value. The data is attached
-    to the operation as an attribute. For example:
-
-    ```mlir
-      %0 = toy.constant dense<[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]>
-                        : tensor<2x3xf64>
-    ```
+    This operation holds a constant double value.
   }];
 
-  // The constant operation takes an attribute as the only input.
-  let arguments = (ins F64ElementsAttr:$value);
+  let arguments = (ins F64Attr:$value);
 
-  // The constant operation returns a single value of TensorType.
-  let results = (outs F64Tensor);
+  let results = (outs F64:$result);
 
-  // Indicate that the operation has a custom parser and printer method.
-  let hasCustomAssemblyFormat = 1;
+  let assemblyFormat = [{
+    $value attr-dict `:` type($result)
+  }];
 
-  // Add custom build methods for the constant operation. These method populates
-  // the `state` that MLIR uses to create operations, i.e. these are used when
-  // using `builder.create<ConstantOp>(...)`.
   let builders = [
     // Build a constant with a given constant tensor value.
-    OpBuilder<(ins "DenseElementsAttr":$value), [{
+    OpBuilder<(ins "double":$value), [{
       build($_builder, $_state, value.getType(), value);
     }]>,
 
-    // Build a constant with a given constant floating-point value.
-    OpBuilder<(ins "double":$value)>
+    
   ];
 
-  // Indicate that additional verification for this operation is necessary.
-  let hasVerifier = 1;
+
+   
 }
+
 
 //===----------------------------------------------------------------------===//
 // AddOp
 //===----------------------------------------------------------------------===//
 
-def AddOp : Toy_Op<"add",
-    [Pure, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
-  let summary = "element-wise addition operation";
+ def AddOp : Toy_Op<"add", [Pure]> {
+  let summary = "addition operation";
   let description = [{
-    The "add" operation performs element-wise addition between two tensors.
-    The shapes of the tensor operands are expected to match.
+    This operation takes two double values as input and produces their sum as the result.
   }];
 
-  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
-  let results = (outs F64Tensor);
+  let arguments = (ins F64:$lhs, F64:$rhs);
 
-  // Indicate that the operation has a custom parser and printer method.
-  let hasCustomAssemblyFormat = 1;
+  let results = (outs F64:$result);
 
-  // Allow building an AddOp with from the two input operands.
+  let assemblyFormat = [{
+    $lhs `,` $rhs attr-dict `:` type($lhs)
+  }];
   let builders = [
     OpBuilder<(ins "Value":$lhs, "Value":$rhs)>
   ];
 }
 
-//===----------------------------------------------------------------------===//
-// CastOp
-//===----------------------------------------------------------------------===//
 
-def CastOp : Toy_Op<"cast", [
-     DeclareOpInterfaceMethods<CastOpInterface>,
-     DeclareOpInterfaceMethods<ShapeInferenceOpInterface>,
-     Pure,
-     SameOperandsAndResultShape
-  ]> {
-  let summary = "shape cast operation";
+//===----------------------------------------------------------------------===//
+// MulOp
+//===----------------------------------------------------------------------===//
+def MulOp : Toy_Op<"mul", [Pure]> {
+  let summary = "multiplication operation";
   let description = [{
-    The "cast" operation converts a tensor from one type to an equivalent type
-    without changing any data elements. The source and destination types must
-    both be tensor types with the same element type. If both are ranked, then
-    shape is required to match. The operation is invalid if converting to a
-    mismatching constant dimension.
+    This operation takes two double values as input and produces their product as the result.
   }];
 
-  let arguments = (ins F64Tensor:$input);
-  let results = (outs F64Tensor:$output);
+  let arguments = (ins F64:$lhs, F64:$rhs);
 
-  let assemblyFormat = "$input attr-dict `:` type($input) `to` type($output)";
+  let results = (outs F64:$result);
+
+  let assemblyFormat = [{
+       $lhs `,` $rhs attr-dict `:` type($lhs)
+  }];
+ let builders = [
+    OpBuilder<(ins "Value":$lhs, "Value":$rhs)>
+  ];
+   
 }
+
+ 
 
 //===----------------------------------------------------------------------===//
 // FuncOp
@@ -214,10 +197,10 @@ def GenericCallOp : Toy_Op<"generic_call",
 
   // The generic call operation takes a symbol reference attribute as the
   // callee, and inputs for the call.
-  let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<F64Tensor>:$inputs);
+  let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<F64>:$inputs);
 
   // The generic call operation returns a single value of TensorType.
-  let results = (outs F64Tensor);
+  let results = (outs F64);
 
   // Specialize assembly printing and parsing using a declarative format.
   let assemblyFormat = [{
@@ -230,29 +213,6 @@ def GenericCallOp : Toy_Op<"generic_call",
   ];
 }
 
-//===----------------------------------------------------------------------===//
-// MulOp
-//===----------------------------------------------------------------------===//
-
-def MulOp : Toy_Op<"mul",
-    [Pure, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
-  let summary = "element-wise multiplication operation";
-  let description = [{
-    The "mul" operation performs element-wise multiplication between two
-    tensors. The shapes of the tensor operands are expected to match.
-  }];
-
-  let arguments = (ins F64Tensor:$lhs, F64Tensor:$rhs);
-  let results = (outs F64Tensor);
-
-  // Indicate that the operation has a custom parser and printer method.
-  let hasCustomAssemblyFormat = 1;
-
-  // Allow building a MulOp with from the two input operands.
-  let builders = [
-    OpBuilder<(ins "Value":$lhs, "Value":$rhs)>
-  ];
-}
 
 //===----------------------------------------------------------------------===//
 // PrintOp
@@ -267,39 +227,11 @@ def PrintOp : Toy_Op<"print"> {
 
   // The print operation takes an input tensor to print.
   // We also allow a F64MemRef to enable interop during partial lowering.
-  let arguments = (ins AnyTypeOf<[F64Tensor, F64MemRef]>:$input);
+  let arguments = (ins F64:$input);
 
   let assemblyFormat = "$input attr-dict `:` type($input)";
 }
-
-//===----------------------------------------------------------------------===//
-// ReshapeOp
-//===----------------------------------------------------------------------===//
-
-def ReshapeOp : Toy_Op<"reshape", [Pure]> {
-  let summary = "tensor reshape operation";
-  let description = [{
-    Reshape operation is transforming its input tensor into a new tensor with
-    the same number of elements but different shapes. For example:
-
-    ```mlir
-       %0 = toy.reshape (%arg1 : tensor<10xf64>) to tensor<5x2xf64>
-    ```
-  }];
-
-  let arguments = (ins F64Tensor:$input);
-
-  // We expect that the reshape operation returns a statically shaped tensor.
-  let results = (outs StaticShapeTensorOf<[F64]>);
-
-  let assemblyFormat = [{
-    `(` $input `:` type($input) `)` attr-dict `to` type(results)
-  }];
-
-  // Enable registering canonicalization patterns with this operation.
-  let hasCanonicalizer = 1;
-}
-
+ 
 //===----------------------------------------------------------------------===//
 // ReturnOp
 //===----------------------------------------------------------------------===//
@@ -323,7 +255,7 @@ def ReturnOp : Toy_Op<"return", [Pure, HasParent<"FuncOp">,
 
   // The return operation takes an optional input operand to return. This
   // value must match the return type of the enclosing function.
-  let arguments = (ins Variadic<F64Tensor>:$input);
+  let arguments = (ins Variadic<F64>:$input);
 
   // The return operation only emits the input in the format if it is present.
   let assemblyFormat = "($input^ `:` type($input))? attr-dict ";
@@ -337,36 +269,7 @@ def ReturnOp : Toy_Op<"return", [Pure, HasParent<"FuncOp">,
   let extraClassDeclaration = [{
     bool hasOperand() { return getNumOperands() != 0; }
   }];
-
-  // Indicate that additional verification for this operation is necessary.
-  let hasVerifier = 1;
+ 
 }
-
-//===----------------------------------------------------------------------===//
-// TransposeOp
-//===----------------------------------------------------------------------===//
-
-def TransposeOp : Toy_Op<"transpose",
-    [Pure, DeclareOpInterfaceMethods<ShapeInferenceOpInterface>]> {
-  let summary = "transpose operation";
-
-  let arguments = (ins F64Tensor:$input);
-  let results = (outs F64Tensor);
-
-  let assemblyFormat = [{
-    `(` $input `:` type($input) `)` attr-dict `to` type(results)
-  }];
-
-  // Enable registering canonicalization patterns with this operation.
-  let hasCanonicalizer = 1;
-
-  // Allow building a TransposeOp with from the input operand.
-  let builders = [
-    OpBuilder<(ins "Value":$input)>
-  ];
-
-  // Indicate that additional verification for this operation is necessary.
-  let hasVerifier = 1;
-}
-
+ 
 #endif // TOY_OPS

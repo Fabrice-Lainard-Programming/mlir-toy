@@ -83,16 +83,7 @@ struct ToyInlinerInterface : public DialectInlinerInterface {
       valuesToRepl[it.index()].replaceAllUsesWith(it.value());
   }
 
-  /// Attempts to materialize a conversion for a type mismatch between a call
-  /// from this dialect, and a callable region. This method should generate an
-  /// operation that takes 'input' as the only operand, and produces a single
-  /// result of 'resultType'. If a conversion can not be generated, nullptr
-  /// should be returned.
-  Operation *materializeCallConversion(OpBuilder &builder, Value input,
-                                       Type resultType,
-                                       Location conversionLoc) const final {
-    return builder.create<CastOp>(conversionLoc, resultType, input);
-  }
+ 
 };
 
 //===----------------------------------------------------------------------===//
@@ -161,120 +152,10 @@ static void printBinaryOp(mlir::OpAsmPrinter &printer, mlir::Operation *op) {
   printer.printFunctionalType(op->getOperandTypes(), op->getResultTypes());
 }
 
-//===----------------------------------------------------------------------===//
-// ConstantOp
-//===----------------------------------------------------------------------===//
 
-/// Build a constant operation.
-/// The builder is passed as an argument, so is the state that this method is
-/// expected to fill in order to build the operation.
-void ConstantOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
-                       double value) {
-  auto dataType = RankedTensorType::get({}, builder.getF64Type());
-  auto dataAttribute = DenseElementsAttr::get(dataType, value);
-  ConstantOp::build(builder, state, dataType, dataAttribute);
-}
-
-/// The 'OpAsmParser' class provides a collection of methods for parsing
-/// various punctuation, as well as attributes, operands, types, etc. Each of
-/// these methods returns a `ParseResult`. This class is a wrapper around
-/// `LogicalResult` that can be converted to a boolean `true` value on failure,
-/// or `false` on success. This allows for easily chaining together a set of
-/// parser rules. These rules are used to populate an `mlir::OperationState`
-/// similarly to the `build` methods described above.
-mlir::ParseResult ConstantOp::parse(mlir::OpAsmParser &parser,
-                                    mlir::OperationState &result) {
-  mlir::DenseElementsAttr value;
-  if (parser.parseOptionalAttrDict(result.attributes) ||
-      parser.parseAttribute(value, "value", result.attributes))
-    return failure();
-
-  result.addTypes(value.getType());
-  return success();
-}
-
-/// The 'OpAsmPrinter' class is a stream that allows for formatting
-/// strings, attributes, operands, types, etc.
-void ConstantOp::print(mlir::OpAsmPrinter &printer) {
-  printer << " ";
-  printer.printOptionalAttrDict((*this)->getAttrs(), /*elidedAttrs=*/{"value"});
-  printer << getValue();
-}
-
-/// Verifier for the constant operation. This corresponds to the
-/// `let hasVerifier = 1` in the op definition.
-mlir::LogicalResult ConstantOp::verify() {
-  // If the return type of the constant is not an unranked tensor, the shape
-  // must match the shape of the attribute holding the data.
-  auto resultType = llvm::dyn_cast<mlir::RankedTensorType>(getResult().getType());
-  if (!resultType)
-    return success();
-
-  // Check that the rank of the attribute type matches the rank of the constant
-  // result type.
-  auto attrType = llvm::cast<mlir::RankedTensorType>(getValue().getType());
-  if (attrType.getRank() != resultType.getRank()) {
-    return emitOpError("return type must match the one of the attached value "
-                       "attribute: ")
-           << attrType.getRank() << " != " << resultType.getRank();
-  }
-
-  // Check that each of the dimensions match between the two types.
-  for (int dim = 0, dimE = attrType.getRank(); dim < dimE; ++dim) {
-    if (attrType.getShape()[dim] != resultType.getShape()[dim]) {
-      return emitOpError(
-                 "return type shape mismatches its attribute at dimension ")
-             << dim << ": " << attrType.getShape()[dim]
-             << " != " << resultType.getShape()[dim];
-    }
-  }
-  return mlir::success();
-}
-
-//===----------------------------------------------------------------------===//
-// AddOp
-//===----------------------------------------------------------------------===//
-
-void AddOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
-                  mlir::Value lhs, mlir::Value rhs) {
-  state.addTypes(UnrankedTensorType::get(builder.getF64Type()));
-  state.addOperands({lhs, rhs});
-}
-
-mlir::ParseResult AddOp::parse(mlir::OpAsmParser &parser,
-                               mlir::OperationState &result) {
-  return parseBinaryOp(parser, result);
-}
-
-void AddOp::print(mlir::OpAsmPrinter &p) { printBinaryOp(p, *this); }
-
-/// Infer the output shape of the AddOp, this is required by the shape inference
-/// interface.
-void AddOp::inferShapes() { getResult().setType(getLhs().getType()); }
-
-//===----------------------------------------------------------------------===//
-// CastOp
-//===----------------------------------------------------------------------===//
-
-/// Infer the output shape of the CastOp, this is required by the shape
-/// inference interface.
-void CastOp::inferShapes() { getResult().setType(getInput().getType()); }
-
-/// Returns true if the given set of input and result types are compatible with
-/// this cast operation. This is required by the `CastOpInterface` to verify
-/// this operation and provide other additional utilities.
-bool CastOp::areCastCompatible(TypeRange inputs, TypeRange outputs) {
-  if (inputs.size() != 1 || outputs.size() != 1)
-    return false;
-  // The inputs must be Tensors with the same element type.
-  TensorType input = llvm::dyn_cast<TensorType>(inputs.front());
-  TensorType output = llvm::dyn_cast<TensorType>(outputs.front());
-  if (!input || !output || input.getElementType() != output.getElementType())
-    return false;
-  // The shape is required to match if both types are ranked.
-  return !input.hasRank() || !output.hasRank() || input == output;
-}
-
+ 
+ 
+  
 //===----------------------------------------------------------------------===//
 // FuncOp
 //===----------------------------------------------------------------------===//
@@ -335,7 +216,7 @@ CallInterfaceCallable GenericCallOp::getCallableForCallee() {
 void GenericCallOp::setCalleeFromCallable(CallInterfaceCallable callee) {
   (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
 }
-
+ 
 /// Get the argument operands to the called function, this is required by the
 /// call interface.
 Operation::operand_range GenericCallOp::getArgOperands() { return getInputs(); }
@@ -345,95 +226,15 @@ Operation::operand_range GenericCallOp::getArgOperands() { return getInputs(); }
 MutableOperandRange GenericCallOp::getArgOperandsMutable() {
   return getInputsMutable();
 }
-
-//===----------------------------------------------------------------------===//
-// MulOp
-//===----------------------------------------------------------------------===//
-
-void MulOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
-                  mlir::Value lhs, mlir::Value rhs) {
-  state.addTypes(UnrankedTensorType::get(builder.getF64Type()));
-  state.addOperands({lhs, rhs});
-}
-
-mlir::ParseResult MulOp::parse(mlir::OpAsmParser &parser,
-                               mlir::OperationState &result) {
-  return parseBinaryOp(parser, result);
-}
-
-void MulOp::print(mlir::OpAsmPrinter &p) { printBinaryOp(p, *this); }
-
-/// Infer the output shape of the MulOp, this is required by the shape inference
-/// interface.
-void MulOp::inferShapes() { getResult().setType(getLhs().getType()); }
-
+ 
 //===----------------------------------------------------------------------===//
 // ReturnOp
 //===----------------------------------------------------------------------===//
-
-mlir::LogicalResult ReturnOp::verify() {
-  // We know that the parent operation is a function, because of the 'HasParent'
-  // trait attached to the operation definition.
-  auto function = cast<FuncOp>((*this)->getParentOp());
-
-  /// ReturnOps can only have a single optional operand.
-  if (getNumOperands() > 1)
-    return emitOpError() << "expects at most 1 return operand";
-
-  // The operand number and types must match the function signature.
-  const auto &results = function.getFunctionType().getResults();
-  if (getNumOperands() != results.size())
-    return emitOpError() << "does not return the same number of values ("
-                         << getNumOperands() << ") as the enclosing function ("
-                         << results.size() << ")";
-
-  // If the operation does not have an input, we are done.
-  if (!hasOperand())
-    return mlir::success();
-
-  auto inputType = *operand_type_begin();
-  auto resultType = results.front();
-
-  // Check that the result type of the function matches the operand type.
-  if (inputType == resultType || llvm::isa<mlir::UnrankedTensorType>(inputType) ||
-      llvm::isa<mlir::UnrankedTensorType>(resultType))
-    return mlir::success();
-
-  return emitError() << "type of return operand (" << inputType
-                     << ") doesn't match function result type (" << resultType
-                     << ")";
-}
-
+ 
 //===----------------------------------------------------------------------===//
 // TransposeOp
 //===----------------------------------------------------------------------===//
-
-void TransposeOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
-                        mlir::Value value) {
-  state.addTypes(UnrankedTensorType::get(builder.getF64Type()));
-  state.addOperands(value);
-}
-
-void TransposeOp::inferShapes() {
-  auto arrayTy = llvm::cast<RankedTensorType>(getOperand().getType());
-  SmallVector<int64_t, 2> dims(llvm::reverse(arrayTy.getShape()));
-  getResult().setType(RankedTensorType::get(dims, arrayTy.getElementType()));
-}
-
-mlir::LogicalResult TransposeOp::verify() {
-  auto inputType = llvm::dyn_cast<RankedTensorType>(getOperand().getType());
-  auto resultType = llvm::dyn_cast<RankedTensorType>(getType());
-  if (!inputType || !resultType)
-    return mlir::success();
-
-  auto inputShape = inputType.getShape();
-  if (!std::equal(inputShape.begin(), inputShape.end(),
-                  resultType.getShape().rbegin())) {
-    return emitError()
-           << "expected result shape to be a transpose of the input";
-  }
-  return mlir::success();
-}
+ 
 
 //===----------------------------------------------------------------------===//
 // TableGen'd op method definitions

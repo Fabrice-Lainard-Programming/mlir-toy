@@ -77,23 +77,19 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/)
             MLIROptLib
             )
     
-set(LLVM_TARGET_DEFINITIONS mlir/ToyCombine.td)
-mlir_tablegen(ToyCombine.inc -gen-rewriters)
-add_public_tablegen_target(ToyCh3CombineIncGen)
+
+            
 
 add_llvm_executable(toyc
 toyc.cpp 
 parser/AST.cpp
 mlir/MLIRGen.cpp
 mlir/Dialect.cpp
-mlir/ToyCombine.cpp
-mlir/LowerToAffineLoops.cpp
 mlir/LowerToLLVM.cpp
-mlir/ShapeInferencePass.cpp
 DEPENDS
 ToyCh3OpsIncGen
-ToyCh3CombineIncGen
-ToyCh5ShapeInferenceInterfaceIncGen
+
+
 )
     
     llvm_update_compile_flags(toyc)

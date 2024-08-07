@@ -321,17 +321,7 @@ private:
       operands.push_back(arg);
     }
 
-    // Builtin calls have their custom operation, meaning this is a
-    // straightforward emission.
-    if (callee == "transpose") {
-      if (call.getArgs().size() != 1) {
-        emitError(location, "MLIR codegen encountered an error: toy.transpose "
-                            "does not accept multiple arguments");
-        return nullptr;
-      }
-      return builder.create<TransposeOp>(location, operands[0]);
-    }
-
+    
     // Otherwise this is a call to a user-defined function. Calls to
     // user-defined functions are mapped to a custom call that takes the callee
     // name as an attribute.
@@ -391,13 +381,8 @@ private:
     if (!value)
       return nullptr;
 
-    // We have the initializer value, but in case the variable was declared
-    // with specific shape, we emit a "reshape" operation. It will get
-    // optimized out later as needed.
-    if (!vardecl.getType().shape.empty()) {
-      value = builder.create<ReshapeOp>(loc(vardecl.loc()),
-                                        getType(vardecl.getType()), value);
-    }
+    
+    
 
     // Register the value in the symbol table.
     if (failed(declare(vardecl.getName(), value)))
