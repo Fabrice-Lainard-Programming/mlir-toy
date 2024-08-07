@@ -61,9 +61,9 @@ class Toy_Op<string mnemonic, list<Trait> traits = []> :
   let builders = [
     // Build a constant with a given constant tensor value.
     OpBuilder<(ins "double":$value), [{
-      build($_builder, $_state, value.getType(), value);
+      build($_builder, $_state,value.getType(), value);
     }]>,
-
+ 
     
   ];
 
