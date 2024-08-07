@@ -43,15 +43,13 @@ class Toy_Op<string mnemonic, list<Trait> traits = []> :
 // ConstantOp
 //===----------------------------------------------------------------------===//
  
-
- def ConstantOp : Toy_Op<"constant", [Pure]> {
+def ConstantOp : Toy_Op<"constant", [Pure]> {
   let summary = "constant double operation";
   let description = [{
     This operation holds a constant double value.
   }];
 
   let arguments = (ins F64Attr:$value);
-
   let results = (outs F64:$result);
 
   let assemblyFormat = [{
@@ -59,16 +57,12 @@ class Toy_Op<string mnemonic, list<Trait> traits = []> :
   }];
 
   let builders = [
-    // Build a constant with a given constant tensor value.
+    // Build a constant with a given double value.
     OpBuilder<(ins "double":$value), [{
-      build($_builder, $_state,value.getType(), value);
-    }]>,
- 
-    
+      auto valueAttr = FloatAttr::get($_builder.getF64Type(), value);
+      build($_builder, $_state, valueAttr.getType(), valueAttr);
+    }]>
   ];
-
-
-   
 }
 
 

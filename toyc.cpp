@@ -166,7 +166,7 @@ mlir::DialectRegistry registry;
    bool isLoweringToAffine = true;
   bool isLoweringToLLVM = true;
 
-  if (enableOpt || isLoweringToAffine) {
+  /*if (enableOpt || isLoweringToAffine) {
     // Inline all functions into main and then delete them.
     pm.addPass(mlir::createInlinerPass());
 
@@ -176,11 +176,11 @@ mlir::DialectRegistry registry;
     optPM.addPass(mlir::toy::createShapeInferencePass());
     optPM.addPass(mlir::createCanonicalizerPass());
     optPM.addPass(mlir::createCSEPass());
-  }
+  }*/
 
   if (isLoweringToAffine) {
     // Partially lower the toy dialect.
-    pm.addPass(mlir::toy::createLowerToAffinePass());
+   // pm.addPass(mlir::toy::createLowerToAffinePass());
 
     // Add a few cleanups post lowering.
     mlir::OpPassManager &optPM = pm.nest<mlir::func::FuncOp>();
