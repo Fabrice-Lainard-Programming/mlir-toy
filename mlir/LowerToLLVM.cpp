@@ -22,11 +22,18 @@
 //
 //===----------------------------------------------------------------------===//
 
+
+ 
 #include "mlir/Dialect/LLVMIR/LLVMAttrs.h"
 #include "mlir/Dialect/LLVMIR/LLVMTypes.h"
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/Operation.h"
+ 
+
+#include "mlir/Interfaces/InferTypeOpInterface.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Support/TypeID.h"
 #include "toy/Dialect.h"
@@ -178,6 +185,47 @@ private:
 
 
 
+namespace {
+ 
+
+class PrintDoubleOpLowering : public ConversionPattern {
+public:
+  explicit PrintDoubleOpLowering(MLIRContext *context)
+      : ConversionPattern(toy::PrintDoubleOp::getOperationName(), 1, context) {}
+
+  LogicalResult matchAndRewrite(Operation *op, ArrayRef<Value> operands,
+                                ConversionPatternRewriter &rewriter) const override {
+    auto printOp = cast<toy::PrintDoubleOp>(op);
+    auto loc = printOp.getLoc();
+
+    // Get the LLVM type for double
+   //auto *doubleTy = llvm::Type::getDoubleTy(rewriter.getContext() );
+   auto llvmDoubleType = rewriter.getF64Type(); 
+ 
+    // Assuming the existence of a runtime function "print_double"
+    // Declare the function type
+    auto llvmFunctionType = rewriter.getFunctionType(rewriter.getNoneType(),llvmDoubleType);
+
+    // Get or insert the print_double function declaration
+    auto module = op->getParentOfType<ModuleOp>();
+    auto printFunc = module.lookupSymbol<LLVM::LLVMFuncOp>("print_double");
+    if (!printFunc) {
+      PatternRewriter::InsertionGuard insertGuard(rewriter);
+      rewriter.setInsertionPointToStart(module.getBody());
+      printFunc = rewriter.create<LLVM::LLVMFuncOp>(loc, "print_double", llvmFunctionType);
+    }
+
+    // Create the call to the print_double function
+    rewriter.create<LLVM::CallOp>(loc, printFunc, operands);
+    rewriter.eraseOp(op);
+
+    return success();
+  }
+ 
+ 
+};
+} // end anonymous namespace
+
 
 namespace {
 class DawnAddOpLowering : public ConversionPattern {
@@ -185,6 +233,11 @@ public:
   explicit DawnAddOpLowering(MLIRContext *context)
       : ConversionPattern(toy::DawnAddOp::getOperationName(), 1, context) {}
 
+
+
+ 
+
+  
   LogicalResult matchAndRewrite(Operation *op, ArrayRef<Value> operands,
                                 ConversionPatternRewriter &rewriter) const override {
     auto addOp = cast<toy::DawnAddOp>(op);
@@ -206,6 +259,85 @@ public:
 } // end anonymous namespace
 
  
+
+namespace {
+
+
+  struct ConstantIntOpLowering : public OpRewritePattern<toy::ConstantIntOp> {
+  using OpRewritePattern<toy::ConstantIntOp>::OpRewritePattern;
+
+ 
+
+   LogicalResult matchAndRewrite(
+      toy::ConstantIntOp constantIntOp,PatternRewriter &rewriter) const override {
+    
+    // Extract the constant value.
+     double value = constantIntOp.getValue().convertToDouble();
+
+
+    // Create the constant value in LLVM dialect.
+  auto llvmF64Type = rewriter.getF64Type(); 
+    Value llvmConst = rewriter.create<LLVM::ConstantOp>(constantIntOp.getLoc(), llvmF64Type,
+                                                        rewriter.getF64FloatAttr(value));
+
+    // Replace the original operation with the LLVM constant.
+    rewriter.replaceOp(constantIntOp, llvmConst);
+
+    return success();
+  }
+};
+
+struct ConstantIntOpLowering3 : public ConversionPattern {
+  explicit ConstantIntOpLowering3(MLIRContext *context)
+      : ConversionPattern(toy::ConstantIntOp::getOperationName(), 1, context) {}
+
+  LogicalResult matchAndRewrite(
+      Operation *op, ArrayRef<Value> operands,
+      ConversionPatternRewriter &rewriter) const override {
+    auto constantIntOp = cast<toy::ConstantIntOp>(op);
+
+    // Extract the constant value.
+     double value = constantIntOp.getValue().convertToDouble();
+
+
+    // Create the constant value in LLVM dialect.
+  auto llvmF64Type = rewriter.getF64Type(); 
+    Value llvmConst = rewriter.create<LLVM::ConstantOp>(op->getLoc(), llvmF64Type,
+                                                        rewriter.getF64FloatAttr(value));
+
+    // Replace the original operation with the LLVM constant.
+    rewriter.replaceOp(op, llvmConst);
+
+    return success();
+  }
+};
+
+class ConstantIntOpLowering2 : public ConversionPattern {
+public:
+  explicit ConstantIntOpLowering2(MLIRContext *context)
+      : ConversionPattern(toy::ConstantIntOp::getOperationName(), 1, context) {}
+
+  LogicalResult
+  matchAndRewrite(Operation *op, ArrayRef<Value> operands,
+                  ConversionPatternRewriter &rewriter) const override {
+    auto constantIntOp = cast<toy::ConstantIntOp>(op);
+    auto loc = constantIntOp.getLoc();
+
+    // Get the constant value from the attribute.
+    double value = constantIntOp.getValue().convertToDouble();
+
+    // Create an LLVM constant operation.
+    auto llvmType = rewriter.getF64Type(); 
+    auto llvmConstant = rewriter.create<LLVM::ConstantOp>(
+        loc, llvmType, rewriter.getF64FloatAttr(value));
+
+    // Replace the toy.constantInt result with the LLVM constant result.
+    rewriter.replaceOp(op, llvmConstant.getResult());
+
+    return success();
+  }
+};
+} // namespace
 
 
 //===----------------------------------------------------------------------===//
@@ -258,6 +390,11 @@ void ToyToLLVMLoweringPass::runOnOperation() {
   // PrintOp.
   patterns.add<PrintOpLowering>(&getContext());
   patterns.add<DawnAddOpLowering>(&getContext());
+ patterns.add<PrintDoubleOpLowering>(&getContext());
+patterns.add<ConstantIntOpLowering>(&getContext());
+ 
+   
+  
 
   // We want to completely lower to LLVM, so we use a `FullConversion`. This
   // ensures that only legal operations will remain after the conversion.

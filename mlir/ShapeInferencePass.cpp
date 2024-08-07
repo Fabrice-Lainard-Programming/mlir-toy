@@ -84,9 +84,12 @@ struct ShapeInferencePass
       if (auto shapeOp = dyn_cast<ShapeInference>(op)) {
         shapeOp.inferShapes();
       } else {
+        // Ignore the operation if it should not be inferred
+      if (!shouldIgnore(op)) {
         op->emitError("unable to infer shape of operation without shape "
                       "inference interface");
         return signalPassFailure();
+      }
       }
     }
 
@@ -97,7 +100,10 @@ struct ShapeInferencePass
       signalPassFailure();
     }
   }
-
+static bool shouldIgnore(Operation *op) {
+  
+  return isa<ConstantIntOp>(op) || isa<DawnAddOp>(op)|| isa<PrintDoubleOp>(op) ;
+}
   /// A utility method that returns if the given operation has all of its
   /// operands inferred.
   static bool allOperandsInferred(Operation *op) {

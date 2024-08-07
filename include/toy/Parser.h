@@ -216,6 +216,16 @@ private:
       return std::make_unique<PrintExprAST>(std::move(loc), std::move(args[0]));
     }
 
+     if (name == "prndouble") {
+      if (args.size() != 1)
+        return parseError<ExprAST>("<single arg>", "as argument to print()");
+
+      return std::make_unique<PrintDoubleExprAST>(std::move(loc), std::move(args[0]));
+    }
+
+
+    
+
      if (name == "dawnadd") {
       if (args.size() != 2)
         return parseError<ExprAST>("<single arg>", "as argument to dawnadd()");

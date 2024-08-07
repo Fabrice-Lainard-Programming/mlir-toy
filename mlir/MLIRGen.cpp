@@ -375,6 +375,18 @@ namespace
       return mlir::success();
     }
 
+    mlir::LogicalResult mlirGen(PrintDoubleExprAST &call)
+    {
+      auto arg = mlirGen(*call.getArg());
+      if (!arg)
+        return mlir::failure();
+
+      builder.create<PrintDoubleOp>(loc(call.loc()), arg);
+      return mlir::success();
+    }
+
+    
+
     mlir::LogicalResult mlirGen(DawnAddAST &call)
     {
 
@@ -388,6 +400,22 @@ namespace
       builder.create<DawnAddOp>(loc(call.loc()), lhs, rhs);
       return mlir::success();
     }
+
+
+    mlir::Value mlirGen2(DawnAddAST &call)
+    {
+
+      mlir::Value lhs = mlirGen(*call.getlhs());
+      if (!lhs)
+        return nullptr;
+      mlir::Value rhs = mlirGen(*call.getrhs());
+      if (!rhs)
+        return nullptr;
+
+      return builder.create<DawnAddOp>(loc(call.loc()), lhs, rhs);
+ 
+    }
+
 
     /// Emit a constant for a single number (FIXME: semantic? broadcast?)
     mlir::Value mlirGen(NumberExprAST &num)
@@ -410,7 +438,9 @@ namespace
       {
       case toy::ExprAST::Expr_BinOp:
         return mlirGen(cast<BinaryExprAST>(expr));
-    
+      case toy::ExprAST::Expr_DawnAdd:
+       return mlirGen2(cast<DawnAddAST>(expr));
+ 
       case toy::ExprAST::Expr_Var:
         return mlirGen(cast<VariableExprAST>(expr));
       case toy::ExprAST::Expr_Literal:
@@ -485,6 +515,13 @@ namespace
             return mlir::success();
           continue;
         }
+  if (auto *print = dyn_cast<PrintDoubleExprAST>(expr.get()))
+        {
+          if (mlir::failed(mlirGen(*print)))
+            return mlir::success();
+          continue;
+        }
+        
         if (auto *dawna = dyn_cast<DawnAddAST>(expr.get()))
         {
           if (mlir::failed(mlirGen(*dawna)))

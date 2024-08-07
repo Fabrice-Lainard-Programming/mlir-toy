@@ -39,33 +39,6 @@ class Toy_Op<string mnemonic, list<Trait> traits = []> :
 // Toy Operations
 //===----------------------------------------------------------------------===//
 
-def ConstantIntOp : Toy_Op<"constantInt", [Pure]> {
-  let summary = "constant double-precision floating-point value";
-  let description = [{
-    This operation represents a constant double-precision floating-point value.
-  }];
-
-  // Specify the operation attributes and results.
-  let arguments = (ins F64Attr:$value);
-  let results = (outs F64:$result);
-
-  // Custom builder for the operation.
- 
- 
-    
- let builders = [
-    OpBuilder<(ins "double":$value), [{
-      auto valueAttr = FloatAttr::get($_builder.getF64Type(), value);
-      build($_builder, $_state, valueAttr.getType(), valueAttr);
-    }]>
-  ];
-    
-  // Specify how to print the operation.
-  let assemblyFormat = [{
-    attr-dict `:` type($result)
-  }];
-}
- 
 
 //===----------------------------------------------------------------------===//
 // ConstantOp
@@ -302,29 +275,6 @@ def PrintOp : Toy_Op<"print"> {
 
 
 
-def DawnAddOp : Toy_Op<"downadd", [Pure]> {
-  let summary = "addition operation";
-  let description = [{
-    This operation represents an addition of two operands.
-  }];
-  let arguments = (ins F64:$lhs, F64:$rhs);
-  let results = (outs F64:$result);
-
-  // Custom builder for the operation.
-  let builders = [
-    OpBuilder<(ins "Value":$lhs, "Value":$rhs), [{
-      // Use the same type for the result as the operands
-      auto resultType = lhs.getType();
-      return build($_builder, $_state, resultType, lhs, rhs);
-    }]>
-  ];
-
-  // Specify how to print the operation.
-  let assemblyFormat = [{
-    $lhs `,` $rhs attr-dict `:` type($lhs)
-  }];
-}
-
 //===----------------------------------------------------------------------===//
 // ReshapeOp
 //===----------------------------------------------------------------------===//
@@ -423,7 +373,58 @@ def TransposeOp : Toy_Op<"transpose",
 }
 
 
+def ConstantIntOp : Toy_Op<"constantInt", [Pure]> {
+  let summary = "constant double-precision floating-point value";
+  let description = [{
+    This operation represents a constant double-precision floating-point value.
+  }];
 
+  // Specify the operation attributes and results.
+  let arguments = (ins F64Attr:$value);
+  let results = (outs F64:$result);
+
+  // Custom builder for the operation.
+ 
+ 
+    
+ let builders = [
+    OpBuilder<(ins "double":$value), [{
+      auto valueAttr = FloatAttr::get($_builder.getF64Type(), value);
+      build($_builder, $_state, valueAttr.getType(), valueAttr);
+    }]>
+  ];
+    
+  // Specify how to print the operation.
+  let assemblyFormat = [{
+    attr-dict `:` type($result)
+  }];
+}
+ 
+ 
+def DawnAddOp : Toy_Op<"dawnadd", [Pure]> {
+  let summary = "addition operation";
+  let description = [{
+    This operation represents an addition of two operands and always returns a double (f64).
+  }];
+  let arguments = (ins F64:$lhs, F64:$rhs);
+  let results = (outs F64:$result);
+
+  // Custom builder for the operation.
+  let builders = [
+    OpBuilder<(ins "Value":$lhs, "Value":$rhs), [{
+      // Result type is always f64
+      return build($_builder, $_state, lhs.getType(), lhs, rhs);
+    }]>
+  ];
+
+  // Specify how to print the operation.
+  let assemblyFormat = [{
+    $lhs  `:` type($lhs)`,` $rhs attr-dict `:` type($rhs)
+  }];
+
+ 
+}
+ 
 
 // Define the 'PrintDoubleOp' operation.
 def PrintDoubleOp : Toy_Op<"print_double"> {
@@ -434,7 +435,7 @@ def PrintDoubleOp : Toy_Op<"print_double"> {
 
   // Specify the operation arguments.
   let arguments = (ins F64:$input);
-
+  let results = (outs);
  
   // Specify how to print the operation.
   let assemblyFormat = [{

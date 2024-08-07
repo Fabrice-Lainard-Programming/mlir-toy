@@ -45,6 +45,7 @@ public:
     Expr_Call,
     Expr_Print,
     Expr_DawnAdd,
+    Expr_PrintDouble
   };
 
   ExprAST(ExprASTKind kind, Location location)
@@ -212,6 +213,21 @@ public:
   /// LLVM style RTTI
   static bool classof(const ExprAST *c) { return c->getKind() == Expr_Print; }
 };
+
+class PrintDoubleExprAST : public ExprAST {
+  std::unique_ptr<ExprAST> arg;
+
+public:
+  PrintDoubleExprAST(Location loc, std::unique_ptr<ExprAST> arg)
+      : ExprAST(Expr_PrintDouble, std::move(loc)), arg(std::move(arg)) {}
+
+  ExprAST *getArg() { return arg.get(); }
+
+  /// LLVM style RTTI
+  static bool classof(const ExprAST *c) { return c->getKind() == Expr_PrintDouble; }
+};
+
+
 
 /// Expression class for builtin print calls.
 class DawnAddAST : public ExprAST {

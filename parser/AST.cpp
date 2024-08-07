@@ -50,6 +50,8 @@ private:
   void dump(BinaryExprAST *node);
   void dump(CallExprAST *node);
   void dump(PrintExprAST *node);
+  void dump(PrintDoubleExprAST *node);
+  
    void dump(DawnAddAST *node);
   void dump(PrototypeAST *node);
   void dump(FunctionAST *node);
@@ -83,7 +85,7 @@ static std::string loc(T *node) {
 void ASTDumper::dump(ExprAST *expr) {
   llvm::TypeSwitch<ExprAST *>(expr)
       .Case<BinaryExprAST, CallExprAST, LiteralExprAST, NumberExprAST,NumberIntExprAST,
-            PrintExprAST, DawnAddAST,ReturnExprAST, VarDeclExprAST, VariableExprAST>(
+            PrintExprAST,PrintDoubleExprAST, DawnAddAST,ReturnExprAST, VarDeclExprAST, VariableExprAST>(
           [&](auto *node) { this->dump(node); })
       .Default([&](ExprAST *) {
         // No match, fallback to a generic message
@@ -202,6 +204,17 @@ void ASTDumper::dump(PrintExprAST *node) {
   indent();
   llvm::errs() << "]\n";
 }
+
+void ASTDumper::dump(PrintDoubleExprAST *node) {
+  INDENT();
+  llvm::errs() << "PrintDouble [ " << loc(node) << "\n";
+  dump(node->getArg());
+  indent();
+  llvm::errs() << "]\n";
+}
+
+
+
 
 /// Print a builtin DawnAdd call, first the builtin name and then the argument.
 void ASTDumper::dump(DawnAddAST *node) {

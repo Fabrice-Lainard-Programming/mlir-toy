@@ -273,7 +273,19 @@ struct PrintOpLowering : public OpConversionPattern<toy::PrintOp> {
   }
 };
 
+struct PrintDoubleOpLowering : public OpConversionPattern<toy::PrintDoubleOp> {
+  using OpConversionPattern<toy::PrintDoubleOp>::OpConversionPattern;
 
+  LogicalResult
+  matchAndRewrite(toy::PrintDoubleOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const final {
+    // We don't lower "toy.printdouble" in this pass, but we need to update its
+    // operands.
+    rewriter.modifyOpInPlace(op,
+                             [&] { op->setOperands(adaptor.getOperands()); });
+    return success();
+  }
+};
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: DawnAddOp operations
 //===----------------------------------------------------------------------===//
@@ -292,7 +304,19 @@ struct DawnAddOpLowering : public OpConversionPattern<toy::DawnAddOp> {
   }
 };
 
+struct ConstantIntOpLowering : public OpConversionPattern<toy::ConstantIntOp> {
+  using OpConversionPattern<toy::ConstantIntOp>::OpConversionPattern;
 
+  LogicalResult
+  matchAndRewrite(toy::ConstantIntOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const final {
+    // We don't lower "toy.print" in this pass, but we need to update its
+    // operands.
+    rewriter.modifyOpInPlace(op,
+                             [&] { op->setOperands(adaptor.getOperands()); });
+    return success();
+  }
+};
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Return operations
 //===----------------------------------------------------------------------===//
@@ -400,7 +424,7 @@ target.addDynamicallyLegalOp<toy::DawnAddOp>([](toy::DawnAddOp op) {
   // the set of patterns that will lower the Toy operations.
   RewritePatternSet patterns(&getContext());
   patterns.add<AddOpLowering, ConstantOpLowering, FuncOpLowering, MulOpLowering,
-               PrintOpLowering, DawnAddOpLowering,ReturnOpLowering, TransposeOpLowering>(
+               PrintOpLowering, ConstantIntOpLowering,DawnAddOpLowering,ReturnOpLowering, TransposeOpLowering>(
       &getContext());
 
   // With the target and rewrite patterns defined, we can now attempt the
