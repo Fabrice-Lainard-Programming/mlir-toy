@@ -163,7 +163,7 @@ mlir::DialectRegistry registry;
   if (mlir::failed(mlir::applyPassManagerCLOptions(pm)))
     return 4;
 
-   bool isLoweringToAffine = true;
+   bool isLoweringToAffine = false;
   bool isLoweringToLLVM = true;
 
   if (enableOpt || isLoweringToAffine) 
@@ -174,12 +174,12 @@ mlir::DialectRegistry registry;
     // Now that there is only one function, we can infer the shapes of each of
     // the operations.
     mlir::OpPassManager &optPM = pm.nest<mlir::toy::FuncOp>();
-     optPM.addPass(mlir::toy::createShapeInferencePass());
+   //  optPM.addPass(mlir::toy::createShapeInferencePass());
     optPM.addPass(mlir::createCanonicalizerPass());
     optPM.addPass(mlir::createCSEPass());
   }
 
-  if (isLoweringToAffine) {
+  if (isLoweringToAffine) { 
     // Partially lower the toy dialect.
     pm.addPass(mlir::toy::createLowerToAffinePass());
 
