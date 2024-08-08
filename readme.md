@@ -19,4 +19,6 @@ The launch parameters are defined in the vscode launch.json file:
 
 hope this helps...
 
+https://github.com/tissue3/mlir-simple-tutorial/tree/main/mlir-standalone-template
+https://www.jeremykun.com/2023/08/21/mlir-defining-a-new-dialect/
     
