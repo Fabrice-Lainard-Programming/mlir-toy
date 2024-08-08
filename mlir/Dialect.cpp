@@ -158,14 +158,14 @@ static void printBinaryOp(mlir::OpAsmPrinter &printer, mlir::Operation *op) {
   state.addTypes(builder.getF64Type());
   state.addOperands({lhs, rhs});
 }
-
+/*
 mlir::ParseResult AddOp::parse(mlir::OpAsmParser &parser,
                                mlir::OperationState &result) {
   return parseBinaryOp(parser, result);
 }
 
 void AddOp::print(mlir::OpAsmPrinter &p) { printBinaryOp(p, *this); }
-
+*/
  
   
 //===----------------------------------------------------------------------===//
