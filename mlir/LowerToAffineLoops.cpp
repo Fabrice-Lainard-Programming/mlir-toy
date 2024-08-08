@@ -229,6 +229,9 @@ struct ReturnOpLowering : public OpRewritePattern<toy::ReturnOp> {
   }
 };
 
+
+ 
+
 //===----------------------------------------------------------------------===//
 // ToyToAffine RewritePatterns: Transpose operations
 //===----------------------------------------------------------------------===//
@@ -274,11 +277,11 @@ void ToyToAffineLoweringPass::runOnOperation() {
   // to lower, `toy.print`, as `legal`. `toy.print` will still need its operands
   // to be updated though (as we convert from TensorType to MemRefType), so we
   // only treat it as `legal` if its operands are legal.
-  target.addIllegalDialect<toy::ToyDialect>();
-  target.addDynamicallyLegalOp<toy::PrintOp>([](toy::PrintOp op) {
+  //target.addIllegalDialect<toy::ToyDialect>();
+  /*target.addDynamicallyLegalOp<toy::PrintOp>([](toy::PrintOp op) {
     return llvm::none_of(op->getOperandTypes(),
                          [](Type type) { return llvm::isa<TensorType>(type); });
-  });
+  });*/
 
   // Now that the conversion target has been defined, we just need to provide
   // the set of patterns that will lower the Toy operations.
