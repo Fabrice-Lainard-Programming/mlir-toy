@@ -176,6 +176,31 @@ private:
 };
 } // namespace
 
+namespace {
+struct ConstantIntOpLowering : public ConversionPattern {
+  explicit ConstantIntOpLowering(MLIRContext *context, LLVMTypeConverter &typeConverter)
+      : ConversionPattern(toy::ConstantOp::getOperationName(), 1, typeConverter) {}
+
+  LogicalResult matchAndRewrite(
+      Operation *op, ArrayRef<Value> operands,
+      ConversionPatternRewriter &rewriter) const override {
+    auto constantIntOp = cast<toy::ConstantOp>(op);
+
+    // Extract the constant value.
+    double value = constantIntOp.getValue().convertToDouble();
+
+    // Create the constant value in LLVM dialect.
+    Type llvmF64Type = LLVM::LLVMType::getDoubleTy(rewriter.getContext());
+    Value llvmConst = rewriter.create<LLVM::ConstantOp>(op->getLoc(), llvmF64Type,
+                                                        rewriter.getF64FloatAttr(value));
+
+    // Replace the original operation with the LLVM constant.
+    rewriter.replaceOp(op, llvmConst);
+
+    return success();
+  }
+};
+} // namespace
 //===----------------------------------------------------------------------===//
 // ToyToLLVMLoweringPass
 //===----------------------------------------------------------------------===//
