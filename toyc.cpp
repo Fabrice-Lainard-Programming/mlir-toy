@@ -180,7 +180,7 @@ mlir::DialectRegistry registry;
 
   if (isLoweringToAffine) {
     // Partially lower the toy dialect.
-  //pm.addPass(mlir::toy::createLowerToAffinePass());
+  pm.addPass(mlir::toy::createLowerToAffinePass());
 
     // Add a few cleanups post lowering.
     mlir::OpPassManager &optPM = pm.nest<mlir::func::FuncOp>();
