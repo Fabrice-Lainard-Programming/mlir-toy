@@ -153,7 +153,16 @@ static void printBinaryOp(mlir::OpAsmPrinter &printer, mlir::Operation *op) {
 }
 
 
- 
+ void AddOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
+                  mlir::Value lhs, mlir::Value rhs) {
+  state.addTypes(UnrankedTensorType::get(builder.getF64Type()));
+  state.addOperands({lhs, rhs});
+}
+
+mlir::ParseResult AddOp::parse(mlir::OpAsmParser &parser,
+                               mlir::OperationState &result) {
+  return parseBinaryOp(parser, result);
+}
  
   
 //===----------------------------------------------------------------------===//
