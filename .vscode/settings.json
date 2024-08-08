@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "__availability": "cpp",
+        "__config": "cpp",
+        "*.def": "cpp"
     }
 }
