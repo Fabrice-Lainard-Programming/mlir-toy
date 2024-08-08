@@ -80,12 +80,7 @@ def ConstantOp : Toy_Op<"constant", [Pure]> {
 
   let results = (outs F64:$result);
 
-  let assemblyFormat = [{
-    $lhs `,` $rhs attr-dict `:` type($lhs)
-  }];
-  let builders = [
-    OpBuilder<(ins "Value":$lhs, "Value":$rhs)>
-  ];
+   let hasCustomAssemblyFormat = 1;
 
    let hasCustomAssemblyFormat = 1;
 
